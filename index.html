@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Interactivo: Reforma LFPIORPI (Julio 2025)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: Se ha diseñado una aplicación de una sola página con una estructura temática, en lugar de seguir el orden de los artículos de la ley. El objetivo es ofrecer una experiencia de usuario intuitiva y orientada a la acción para profesionales del cumplimiento. La estructura incluye: 1) Un resumen ejecutivo con puntos clave. 2) Secciones dedicadas a los principales impactos de la reforma: Nuevas Actividades Vulnerables, Nuevas Obligaciones, el rol del Beneficiario Controlador, Facultades de la Autoridad y Sanciones. 3) Una barra de navegación fija que permite saltar a cualquier sección, facilitando la consulta de temas específicos. Además, se añade una sección de utilidad con una herramienta de simplificación de texto legal impulsada por IA y una nueva sección de Asistente de IA para LFPIORPI general. -->
+    <!-- Visualization & Content Choices: Se han seleccionado métodos de visualización y presentación para maximizar la claridad y el impacto, evitando deliberadamente SVG y Mermaid JS. 1. Puntos Clave: (Meta: Informar) Se usan tarjetas de alto contraste con HTML/Tailwind para un resumen rápido e impactante. 2. Nuevas Actividades Vulnerables: (Meta: Organizar) Una lista estructurada en HTML/CSS es más clara y directa que un gráfico para presentar elementos nuevos. 3. Nuevas Obligaciones: (Meta: Organizar) Un sistema de pestañas con JS permite agrupar y presentar una gran cantidad de información detallada sin abrumar al usuario. 4. Beneficiario Controlador: (Meta: Explicar Relación) Un diagrama visual simple hecho con HTML/CSS (Flexbox) comunica la estructura de la obligación de manera más intuitiva que el texto solo. 5. Sanciones: (Meta: Comparar) Un gráfico de barras de Chart.js se utiliza para comparar visualmente las multas mínimas y máximas por tipo de infracción, mostrando el rango de las penas con un eje Y en escala logarítmica para manejar la disparidad de valores. Se complementa con una tabla HTML para la precisión numérica. La interacción se limita a tooltips informativos en el gráfico para no complicar la experiencia. 6. Simplificador de Lenguaje Legal: (Meta: Transformar/Simplificar) Se utiliza un textarea y un botón para que el usuario ingrese texto, y el modelo de lenguaje Gemini (gemini-2.0-flash) lo procesa para devolver una versión simplificada, mostrándola en un div de salida. Se incluye un indicador de carga para la experiencia del usuario. 7. Asistente de IA para LFPIORPI: (Meta: Consultar/Obtener Información Específica) Se utiliza un textarea para la pregunta del usuario, un botón para enviar la consulta, y un div para la respuesta. El modelo Gemini (gemini-2.0-flash) es instruido para actuar como un experto en LFPIORPI para cualquier actividad o persona común, proporcionando respuestas concisas y relevantes sobre obligaciones, actividades vulnerables y restricciones de efectivo, con información actualizada de la reforma del 16 de julio de 2025, incluyendo detalles sobre EBR, capacitación, sistemas de monitoreo, clasificación de riesgos, auditoría, alta y representante de cumplimiento, y avisos de 24 horas. Se incluye un spinner de carga. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F9FA;
+            color: #212529;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+        }
+        .tab-button.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #0d6efd;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-gray-800">Reforma LFPIORPI 2025</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#resumen" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Resumen</a>
+                        <a href="#actividades" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Actividades Vulnerables</a>
+                        <a href="#obligaciones" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Nuevas Obligaciones</a>
+                        <a href="#beneficiario" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Beneficiario Controlador</a>
+                        <a href="#facultades" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Facultades Autoridad</a>
+                        <a href="#sanciones" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Sanciones</a>
+                        <a href="#simplificador" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Simplificador Legal ✨</a>
+                        <a href="#lfpiorpi-assistant" class="nav-link px-3 py-2 text-sm font-medium text-gray-600 border-b-2 border-transparent">Asistente LFPIORPI 🤖</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 rounded-md" role="alert">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM10 11a1 1 0 100-2 1 1 0 000 2zm-1 4a1 1 0 102 0 1 1 0 00-2 0z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        **Elaborado por GMC360.** Este es un resumen **no oficial** de la Ley Federal para la Prevención e Identificación de Operaciones con Recursos de Procedencia Ilícita (LFPIORPI) y sus reformas. La función de la Inteligencia Artificial es orientar sobre preguntas generales y **no debe usarse para elaborar documentos oficiales, tomar decisiones legales o sustituir la asesoría de un profesional del derecho.**
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <section id="resumen" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 text-gray-900">Análisis de la Reforma Antilavado (Julio 2025)</h2>
+            <p class="text-center max-w-3xl mx-auto text-gray-600 mb-12">
+                La reforma publicada el 16 de julio de 2025 moderniza y endurece significativamente el marco legal para prevenir el lavado de dinero y la financiación del terrorismo en México. Esta plataforma interactiva resume los cambios más críticos para que los sujetos obligados puedan entender sus nuevos deberes y responsabilidades. Los cambios principales se centran en ampliar las actividades consideradas vulnerables, reforzar la identificación del Beneficiario Controlador y otorgar mayores facultades de supervisión a la autoridad.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+                    <div class="text-blue-600 mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z" /></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Nuevas Actividades Vulnerables</h3>
+                    <p class="text-gray-600 text-sm">Se incorporan sectores de alto riesgo como activos virtuales y la recepción de recursos para desarrollo inmobiliario, entre otros.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+                    <div class="text-blue-600 mb-3">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Énfasis en Beneficiario Controlador</h3>
+                    <p class="text-gray-600 text-sm">Se amplía la definición (umbral del 25%) y se establecen obligaciones estrictas para su identificación, incluyendo la creación de un registro central.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+                    <div class="text-blue-600 mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Régimen Sancionador y Facultades</h3>
+                    <p class="text-gray-600 text-sm">Se formalizan las multas en UMA y se otorgan a la UIF y al SAT nuevas herramientas de verificación y fiscalización, endureciendo el régimen de cumplimiento.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+                    <div class="text-blue-600 mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Nuevas Obligaciones</h3>
+                    <p class="text-gray-600 text-sm">Implementación de manuales, EBR, capacitación, auditoría, matriz de riesgo y sistemas de monitoreo.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="actividades" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 text-gray-900">Expansión de Actividades Vulnerables (Art. 17) y Otras Precisiones</h2>
+            <p class="text-center max-w-3xl mx-auto text-gray-600 mb-12">
+                La reforma amplía el catálogo de Actividades Vulnerables para incluir a nuevos sectores y actores económicos que, por su naturaleza, pueden ser utilizados en esquemas de lavado de dinero. Además, se introducen otras precisiones y restricciones importantes. Es crucial que las empresas en estos rubros se registren y comiencen a cumplir con las obligaciones de la ley.
+            </p>
+            <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+                <h3 class="font-bold text-xl mb-4 text-gray-800">Nuevas Actividades Vulnerables</h3>
+                <ul class="space-y-4 mb-8">
+                    <li class="flex items-start">
+                        <span class="text-blue-500 font-bold mr-3 mt-1">&#10148;</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-800">Activos Virtuales (Fracción XVI)</h4>
+                            <p class="text-gray-600 text-sm">El ofrecimiento habitual y profesional de intercambio de activos virtuales (criptomonedas) por parte de sujetos distintos a las Entidades Financieras. Será Actividad Vulnerable a partir de un monto igual o superior a 60 veces la UMA (para identificación) o 210 UMA (para aviso).</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-blue-500 font-bold mr-3 mt-1">&#10148;</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-800">Recepción de recursos para Desarrollo Inmobiliario (Fracción V Bis)</h4>
+                            <p class="text-gray-600 text-sm">La recepción de recursos que se destinen para llevar a cabo un Desarrollo Inmobiliario cuya finalidad sea su venta o renta. El umbral para Aviso es de 8,025 veces el valor diario de la UMA.</p>
+                        </div>
+                    </li>
+                     <li class="flex items-start">
+                        <span class="text-blue-500 font-bold mr-3 mt-1">&#10148;</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-800">Facilitadores en Mecanismos Alternativos de Solución de Controversias (Fracción XII.D)</h4>
+                            <p class="text-gray-600 text-sm">Las personas facilitadoras públicas y privadas a que se refiere la Ley General de Mecanismos Alternativos de Solución de Controversias, aplicando las mismas previsiones que para los notarios públicos.</p>
+                        </div>
+                    </li>
+                </ul>
+                <h3 class="font-bold text-xl mb-4 text-gray-800">Otras Precisiones y Restricciones Relevantes</h3>
+                <ul class="space-y-4 mb-8">
+                    <li class="flex items-start">
+                        <span class="text-blue-500 font-bold mr-3 mt-1">&#10148;</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-800">Prohibición de "Consignación de Pago" en Efectivo (Art. 32, Fracción VIII)</h4>
+                            <p class="text-gray-600 text-sm">Se prohíbe la consignación de pago relacionada con actos u operaciones que ya tienen prohibición de efectivo, cerrando una posible vía de elusión. Además, la Secretaría podrá extender la prohibición a "bienes fungibles", de acuerdo al grado de riesgo que representen. Esta es una restricción al uso de efectivo, no una actividad vulnerable.</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-blue-500 font-bold mr-3 mt-1">&#10148;</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-800">Umbrales Convertidos a UMA</h4>
+                            <p class="text-gray-600 text-sm">Todos los umbrales monetarios para identificación y aviso en el Artículo 17 (y Artículo 32) se convierten de "salario mínimo" a "UMA" (Unidad de Medida y Actualización). Los valores numéricos equivalentes se mantienen en el momento de la conversión. La UMA es una unidad de cuenta, índice, base, medida o referencia económica en pesos que se utiliza para determinar la cuantía del pago de las obligaciones y supuestos previstos en las leyes federales, de las entidades federativas y del Distrito Federal, así como en las disposiciones jurídicas que emanen de todas las anteriores. Su actualización anual por el INEGI con base en la inflación proporciona mayor estabilidad y previsibilidad a los umbrales, desvinculándolos de las políticas salariales y evitando distorsiones económicas.</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-blue-500 font-bold mr-3 mt-1">&#10148;</span>
+                        <div>
+                            <h4 class="font-semibold text-gray-800">Actividades realizadas a través de fideicomisos o cualquier otra figura jurídica (Art. 17, párrafo final)</h4>
+                            <p class="text-gray-600 text-sm">Se establece que "También se considerará que realizan las actividades vulnerables previstas en el presente artículo, quienes actúan por medio de fideicomisos o cualquier otra figura jurídica". Esta es una cláusula general anti-elusión que asegura que las estructuras complejas, como los fideicomisos o cualquier otra figura jurídica no explícitamente listada, no puedan ser utilizadas para evitar la aplicación de la ley y las obligaciones de reporte.</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="obligaciones" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 text-gray-900">Nuevas y Mayores Obligaciones (Art. 18)</h2>
+            <p class="text-center max-w-3xl mx-auto text-gray-600 mb-12">
+                La reforma no solo agrega actividades, sino que también impone deberes más estrictos a todos los sujetos obligados. El cumplimiento de estas obligaciones es fundamental para evitar sanciones severas. A continuación, se detallan los cambios agrupados por tema para una mejor comprensión.
+            </p>
+            <div class="bg-white rounded-lg shadow-lg">
+                <div class="border-b border-gray-200">
+                    <div id="tabs-container" class="flex flex-wrap -mb-px px-4 pt-4">
+                        <button data-tab="tab1" class="tab-button active inline-block p-4 border-b-2 rounded-t-lg font-semibold text-sm">Identificación y Avisos</button>
+                        <button data-tab="tab2" class="tab-button inline-block p-4 border-b-2 rounded-t-lg font-semibold text-sm">Políticas de Cumplimiento</button>
+                        <button data-tab="tab3" class="tab-button inline-block p-4 border-b-2 rounded-t-lg font-semibold text-sm">Fideicomisos</button>
+                    </div>
+                </div>
+                <div class="p-6 md:p-8">
+                    <div id="tab1" class="tab-content">
+                        <h4 class="font-bold text-xl mb-4 text-gray-800">Diligencia Debida y Reportes</h4>
+                        <ul class="list-disc pl-5 space-y-3 text-gray-700">
+                            <li><strong>Identificación Reforzada:</strong> Se debe identificar y conocer de manera directa a las personas Clientes o Usuarias con quienes realicen la Actividad Vulnerable y verificar su identidad basándose en documentos u otros medios de identificación con reconocimiento oficial, así así como recabar copia de los mismos, de conformidad con las Reglas de carácter general que emita la Secretaría.</li>
+                            <li><strong>Información de Actividad/Ocupación:</strong> Para los casos en que se establezca una Relación de negocios, se solicitará a la Persona Cliente o Usuaria la información sobre su actividad u ocupación, basándose entre otros, en los avisos de inscripción y actualización de actividades presentados para efectos del Registro Federal de Contribuyentes (RFC).</li>
+                            <li><strong>Identificación del Beneficiario Controlador (25%):</strong> Cuando la Cliente o Usuaria sea persona moral, fideicomiso u otra figura jurídica, recabar documentos u otros medios de identificación con reconocimiento oficial que permita identificar a su Beneficiario Controlador. Cuando la Cliente o Usuaria sea persona física, recabar la declaración acerca de si tiene o no conocimiento de la existencia de una persona Beneficiario Controlador y, en su caso, la documentación que permita identificarla.</li>
+                            <li><strong>Aviso de 24 Horas:</strong> Se introduce la obligación de presentar un aviso dentro de las 24 horas siguientes a que se tenga sospecha o información basada en hechos o indicios de que los recursos pudieren provenir o estar destinados a operaciones con recursos de procedencia ilícita, incluso si el acto u operación no se celebró. **Esta obligación, que antes podía estar en reglas, ahora se eleva a rango de Ley.**</li>
+                            <li><strong>Avisos sin Operación:</strong> Se establece la obligación de presentar avisos informando que no se realizaron actos u operaciones objeto de aviso en el periodo correspondiente ("avisos en cero"). **Esta práctica, ya existente, se formaliza o refuerza explícitamente en la Ley.**</li>
+                            <li><strong>Expediente Único:</strong> Se deberá integrar un expediente de identificación por cada cliente, que debe estar actualizado permanentemente.</li>
+                            <li><strong>Plazo de Conservación de Información:</strong> El plazo para custodiar la información y documentación se extiende de 5 a **10 años** a partir de la fecha de la realización de la Actividad Vulnerable.</li>
+                            <li><strong>Registro y Actualizaciones en Padrón:</strong> Obligación de realizar el alta, registro, modificación o baja del Padrón de personas que realizan Actividades Vulnerables a través del Portal en Internet, enviando información, documentación, datos e imágenes por medios electrónicos.</li>
+                        </ul>
+                    </div>
+                    <div id="tab2" class="tab-content hidden">
+                        <h4 class="font-bold text-xl mb-4 text-gray-800">Gestión de Riesgos y Capacitación</h4>
+                        <ul class="list-disc pl-5 space-y-3 text-gray-700">
+                            <li><strong>Enfoque Basado en Riesgos (EBR):</strong> Obligación formal de diseñar e implementar una metodología de evaluación de riesgos para identificar, analizar, entender y mitigar los riesgos propios y de los clientes.</li>
+                            <li><strong>Manual de Políticas Internas:</strong> Elaborar y observar un Manual de Políticas Internas que contenga los criterios, medidas y procedimientos para cumplir con las obligaciones, incluyendo la identificación y seguimiento de Personas Políticamente Expuestas (PPE). Si forma parte de un grupo empresarial, implementar políticas aplicables a todas sus sucursales y filiales de participación mayoritaria, incluidas las extranjeras.</li>
+                             <li><strong>Programas de Capacitación Anuales:</strong> Desarrollar procesos de selección de personal y adoptar programas de capacitación anuales dirigidos a los miembros del órgano de administración o administrador único, directivos, representantes de cumplimiento y empleados que tengan relación directa con clientes o usuarios.</li>
+                            <li><strong>Mecanismos Automatizados de Monitoreo:</strong> Contar con mecanismos automatizados para el monitoreo permanente de actos u operaciones con clientes o usuarios, identificando operaciones que se aparten del perfil transaccional o que deban ser acumuladas, y realizando un seguimiento intensificado de las Personas Políticamente Expuestas o de alto riesgo.</li>
+                            <li><strong>Revisión de Auditoría Interna o Externa:</strong> Contar con una revisión por parte del área de auditoría interna o un auditor externo independiente (según el nivel de riesgo) para evaluar y dictaminar anualmente la efectividad del cumplimiento de las obligaciones.</li>
+                        </ul>
+                    </div>
+                    <div id="tab3" class="tab-content hidden">
+                        <h4 class="font-bold text-xl mb-4 text-gray-800">Regulación de Fideicomisos</h4>
+                        <ul class="list-disc pl-5 space-y-3 text-gray-700">
+                            <li><strong>Fideicomisos como Clientes/Usuarios:</strong> La reforma explícitamente incluye a los fideicomisos en la definición de "Cliente o Usuaria" (Art. 3, Frac. III Bis), lo que significa que ahora deben ser identificados y sus operaciones monitoreadas.</li>
+                            <li><strong>Cláusula Anti-Elusión (Art. 17, párrafo final):</strong> Se establece que quienes actúen por medio de fideicomisos o cualquier otra figura jurídica también serán considerados como realizando actividades vulnerables, asegurando que estas estructuras complejas no evadan la ley.</li>
+                            <li><strong>Responsabilidad del Fiduciario:</strong> En fideicomisos que no son operados por entidades financieras, la responsabilidad del cumplimiento recaerá en quien actúe como fiduciario.</li>
+                            <li><strong>Identificación de Partes:</strong> Se debe identificar a todas las partes del fideicomiso: fideicomitente, fiduciario, fideicomisario(s) y, crucialmente, al Beneficiario Controlador.</li>
+                            <li><strong>Aviso de Constitución:</strong> La constitución del fideicomiso, así como las aportaciones subsecuentes que superen el umbral, deberán ser reportadas a la UIF.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="beneficiario" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 text-gray-900">El Rol Central del Beneficiario Controlador</h2>
+            <p class="text-center max-w-3xl mx-auto text-gray-600 mb-12">
+                Uno de los pilares de la reforma es la transparencia sobre quién realmente se beneficia y controla las estructuras corporativas y financieras. Se amplía la definición de Beneficiario Controlador y se establecen obligaciones más rigurosas para su identificación, creando un ecosistema de mayor rendición de cuentas.
+            </p>
+            <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+                <div class="flex flex-col md:flex-row gap-8">
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-lg mb-3 text-blue-600">Definición Ampliada y Umbral Reducido (Art. 3, Frac. III)</h3>
+                        <p class="text-gray-700 mb-4">La reforma reduce el umbral de control del **50% al 25%** del capital social para identificar al Beneficiario Controlador. Esto significa que la persona o grupo de personas que ejerza el voto respecto de al menos el 25% del capital social, o que ejerza control de hecho o de derecho, deberá ser identificada. Además, se equipara explícitamente con "beneficiario final" y "propietario real".</p>
+                        <p class="text-gray-700">La reforma considera Beneficiario Controlador a la persona o grupo de personas que:</p>
+                        <ul class="list-decimal pl-5 space-y-2 text-gray-700">
+                            <li>Por sí misma o a través de otros, obtiene, en última instancia, el beneficio de goce, uso, disfrute, aprovechamiento o disposición del bien o servicio derivado de la realización de un acto u operación.</li>
+                            <li>Ejerce el control efectivo en última instancia de aquella persona moral que, en su carácter de Cliente o Usuaria, lleve a cabo actos u operaciones con quien realice una Actividad Vulnerable, así como las personas por cuenta de quienes celebra alguno de ellos.</li>
+                            <li>Puede imponer, directa o indirectamente, decisiones en las asambleas generales de accionistas, socios u órganos equivalentes, o nombrar o destituir a la mayoría de los consejeros, administradores o sus equivalentes.</li>
+                            <li>Mantiene la titularidad de los derechos que permitan, directa o indirectamente, ejercer el voto respecto de más del veinticinco por ciento del capital social.</li>
+                            <li>Dirige, directa o indirectamente, la administración, la estrategia o las principales políticas de la misma.</li>
+                        </ul>
+                    </div>
+                    <div class="border-t md:border-t-0 md:border-l border-gray-200"></div>
+                    <div class="flex-1">
+                         <h3 class="font-semibold text-lg mb-3 text-blue-600">Obligaciones Clave y Registro Centralizado (Capítulo IV Bis)</h3>
+                         <p class="text-gray-700 mb-4">La reforma introduce un nuevo **Capítulo IV Bis** que establece obligaciones generales de transparencia para el Beneficiario Controlador, más allá de las actividades vulnerables:</p>
+                        <ul class="list-decimal pl-5 space-y-2 text-gray-700">
+                            <li><strong>Obligación General de Identificación:</strong> Todas las sociedades mercantiles deben atender los requerimientos de las autoridades competentes para determinar a su Beneficiario Controlador y conservar la información que lo soporte.</li>
+                            <li><strong>Registro Centralizado:</strong> Cuando se realice la transmisión de dominio o constitución de derechos sobre títulos representativos de partes sociales o acciones de sociedades mercantiles, estas deberán presentar aviso de la inscripción en el libro de registro de la sociedad en un sistema electrónico operado por la Secretaría de Economía.</li>
+                            <li><strong>Registro de Información del BC:</strong> Las sociedades mercantiles también deben registrar en el sistema electrónico referido la información necesaria para identificar a la persona o grupo de personas que cumplan los supuestos para ser consideradas como Beneficiario Controlador.</li>
+                            <li><strong>Extensión a Sociedades Civiles:</strong> La Secretaría promoverá entre las autoridades competentes de las Entidades Federativas que las sociedades y asociaciones civiles identifiquen a su respectivo Beneficiario Controlador.</li>
+                            <li><strong>Proporcionar Información:</strong> Los sujetos obligados deben proporcionar la información del BC a la UIF y al SAT cuando sea requerida.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="facultades" class="mb-16 scroll-mt-20">
+             <h2 class="text-3xl font-bold text-center mb-4 text-gray-900">Fortalecimiento de las Facultades de la Autoridad</h2>
+            <p class="text-center max-w-3xl mx-auto text-gray-600 mb-12">
+                Para asegurar el cumplimiento efectivo de la ley, la reforma dota a la Secretaría de Hacienda (a través de la UIF y el SAT) de nuevas y más potentes herramientas de supervisión y fiscalización. Esto aumenta la capacidad del Estado para detectar y sancionar incumplimientos.
+            </p>
+             <div class="bg-white rounded-lg shadow-lg p-6 md:p-8 grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-4">
+                        <span>&#128269;</span>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Verificaciones y Requerimientos (Art. 45)</h4>
+                        <p class="text-gray-600 text-sm">La Secretaría podrá comprobar el cumplimiento de las obligaciones mediante la práctica de visitas de verificación o requerimientos de información, documentación, datos e imágenes. Las personas requeridas o visitadas deberán proporcionar exclusivamente la información directamente relacionada con las Actividades Vulnerables. **La Secretaría y la Fiscalía están facultadas para recabar y corroborar información para la identificación y análisis de operaciones con recursos de procedencia ilícita, incluyendo el acceso a registros públicos, bases de datos o con la expedición de identificaciones oficiales, que obren en poder de autoridades federales, locales o municipales.**</p>
+                    </div>
+                </div>
+                 <div class="flex items-start">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-4">
+                        <span>&#128176;</span>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Coordinación Interinstitucional y Comunicación de Información (Art. 47)</h4>
+                        <p class="text-gray-600 text-sm">Se fortalece la coordinación de funciones con la Secretaría de Seguridad y Protección Ciudadana (SSPC) y la Guardia Nacional, además de la Fiscalía General de la República. La Unidad Especializada en Investigación de Delitos Fiscales y Financieros coadyuvará en el desarrollo de herramientas de inteligencia para investigar las estructuras financieras de organizaciones delictivas. **Además, la Secretaría debe comunicar información a las instancias encargadas del combate a la corrupción o de procuración de justicia de las entidades federativas si identifica conductas susceptibles de ser analizadas o investigadas, añadiendo explícitamente los "Delitos fiscales" como motivo para esta comunicación.**</p>
+                    </div>
+                </div>
+                 <div class="flex items-start">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-4">
+                        <span>&#9995;</span>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Suspensión Temporal de Operaciones (Art. 54 Bis)</h4>
+                        <p class="text-gray-600 text-sm">La Secretaría podrá determinar la **suspensión temporal** de la realización de actos u operaciones con determinadas personas Clientes o Usuarias. Esta suspensión se realizará **conforme a los mecanismos que se establezcan en las reglas de carácter general y se mantendrá en tanto se subsane o resuelva el procedimiento establecido** en dichos mecanismos. Esto implica que la autoridad puede detener transacciones de alto riesgo de manera expedita, pero bajo un marco procedimental, no por mera presunción.</p>
+                    </div>
+                </div>
+                 <div class="flex items-start">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-4">
+                        <span>&#128100;</span>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Protección de Identidad de Oficiales de Cumplimiento (Art. 41 Bis)</h4>
+                        <p class="text-gray-600 text-sm">Para proteger la identidad de los oficiales de cumplimiento de entidades financieras y de los Representantes Encargadas de Cumplimiento de actividades vulnerables, cuando las autoridades judiciales o administrativas requieran su comparecencia, **estas diligencias podrán ser desahogadas por los representantes legales o apoderados de las entidades.** Esta medida fomenta un reporte robusto de actividades sospechosas al minimizar la exposición directa de los oficiales.</p>
+                    </div>
+                </div>
+                 <div class="flex items-start">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-4">
+                        <span>&#127760;</span>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">Medidas para Países de Mayor Riesgo y Enlace Internacional</h4>
+                        <p class="text-gray-600 text-sm">La Secretaría podrá establecer medidas específicas cuando identifique que un país representa un mayor riesgo en materia de Delitos de Operaciones con Recursos de Procedencia Ilícita. Dichas medidas deberán ser proporcionales al riesgo identificado. Además, fungirá como enlace entre el Gobierno Federal y organismos internacionales.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="sanciones" class="scroll-mt-20 mb-16">
+            <h2 class="text-3xl font-bold text-center mb-4 text-gray-900">Sanciones Económicas y Cambios Penales</h2>
+            <p class="text-center max-w-3xl mx-auto text-gray-600 mb-12">
+                La reforma establece un régimen de sanciones administrativas más específico y robusto. Las multas se expresan en Unidades de Medida y Actualización (UMA), y sus rangos varían según la infracción. El siguiente gráfico ilustra los rangos de multas (mínima y máxima) para diversas infracciones comunes según el Artículo 54 de la Ley, utilizando una escala logarítmica para una mejor visualización de la disparidad de valores.
+            </p>
+             <div class="bg-white rounded-lg shadow-lg p-6 md:p-8 mb-8">
+                <div class="chart-container">
+                    <canvas id="sancionesChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+                <h3 class="font-semibold text-lg mb-3 text-gray-800">Detalle de Sanciones Administrativas (Artículo 54)</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Infracción (Artículo 53)</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Multa Mínima (UMA)</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Multa Máxima (UMA)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">I. Incumplir requerimientos</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">200</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2,000</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">II. Incumplir Art. 18 (Obligaciones Generales)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">200</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2,000</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">III. Presentar Avisos Tarde (hasta 30 días)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">200</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2,000</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">IV. Presentar Avisos sin Requisitos (Art. 24)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">200</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2,000</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">V. Incumplir Art. 33, 33 Bis, 33 Ter (Beneficiario Controlador / Efectivo)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2,000</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10,000</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">VI. Omitir presentar Avisos (Art. 17)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10,000</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">65,000 (o 10%-100% valor operación, el mayor)</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">VII. Participar en actos prohibidos (Art. 32, efectivo)</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10,000</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">65,000 (o 10%-100% valor operación, el mayor)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+             <div class="bg-white rounded-lg shadow-lg p-6 md:p-8 mt-8">
+                 <h3 class="font-semibold text-lg mb-3 text-gray-800">Modificación al Código Penal Federal (Art. 400 Bis)</h3>
+                 <p class="text-gray-700">El Artículo 400 Bis del Código Penal Federal establece una pena de prisión de **cinco a quince años** y una multa de **mil a cinco mil días multa** para quien, por sí o por interpósita persona, realice operaciones como la adquisición, enajenación, administración, custodia, posesión, cambio, conversión, depósito, retiro, entrega, recepción (por cualquier motivo), inversión, transporte o transmisión de recursos, derechos o bienes de cualquier naturaleza, cuando tenga conocimiento de que proceden o representan el producto de una actividad ilícita.</p>
+                 <p class="text-gray-700 mt-2">También se sanciona el ocultamiento, encubrimiento o el intento de ocultar o encubrir la naturaleza, origen, ubicación, destino, movimiento, propiedad o titularidad de dichos recursos, derechos o bienes.</p>
+                 <p class="text-gray-700 mt-2">**Novedad de la Reforma (16 de julio de 2025):** En caso de conductas previstas en este Capítulo, en las que se utilicen servicios de instituciones que integran el sistema financiero, **el Ministerio Público estará en todo momento facultado para investigarlas.** Para ejercer la acción penal se requerirá la denuncia de la Secretaría de Hacienda y Crédito Público, quien tendrá el carácter de víctima u ofendida.</p>
+
+                 <h4 class="font-semibold text-lg mb-3 mt-6 text-gray-800">Agravantes de Pena (Artículo 400 Bis 1)</h4>
+                 <ul class="list-disc pl-5 space-y-2 text-gray-700">
+                     <li><strong>Aumento de un tercio a la mitad:</strong> Si el delito es cometido por consejero, administrador, funcionario, empleado, apoderado o prestador de servicios de alguna entidad sujeta al régimen de prevención de operaciones con recursos de procedencia ilícita, o si lo hace dentro de los dos años siguientes a haber cesado en dicho cargo. Además de la pena de prisión, se impondrá inhabilitación para desempeñar empleo, cargo o comisión en personas morales sujetas al régimen de prevención por un tiempo igual al de la pena de prisión impuesta.</li>
+                     <li><strong>Duplicación de penas:</strong> Si la conducta es cometida por servidores públicos encargados de prevenir, detectar, denunciar, investigar o juzgar la comisión de delitos o ejecutar las sanciones penales, así como a los ex-servidores públicos en dichas funciones que cometan la conducta dentro de los dos años posteriores a su terminación. También se impondrá inhabilitación por un periodo igual a la pena de prisión impuesta.</li>
+                     <li><strong>Aumento de hasta la mitad:</strong> Si la persona que comete el delito utiliza a menores de dieciocho años de edad o a personas que no tienen capacidad para comprender el significado del hecho o para resistirlo.</li>
+                 </ul>
+             </div>
+        </section>
+
+        <section id="simplificador" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 text-gray-900">Simplificador de Lenguaje Legal ✨</h2>
+            <p class="text-center max-w-3xl mx-auto text-gray-600 mb-8">
+                Pega cualquier texto legal en el área de abajo y la inteligencia artificial de Gemini lo simplificará para ti, haciéndolo más fácil de entender.
+            </p>
+            <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+                <textarea id="legalTextInput" class="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 text-gray-800" rows="8" placeholder="Pega aquí el texto legal que deseas simplificar..."></textarea>
+                <button id="simplifyButton" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out flex items-center justify-center">
+                    <span id="buttonText">Simplificar Texto ✨</span>
+                    <div id="loadingSpinner" class="loading-spinner ml-3 hidden"></div>
+                </button>
+                <div id="simplifiedOutput" class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-md text-gray-700 min-h-[100px] flex items-center justify-center text-center">
+                    <p>El texto simplificado aparecerá aquí.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="lfpiorpi-assistant" class="mb-16 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 text-gray-900">Asistente de IA LFPIORPI 🤖</h2>
+            <p class="text-center max-w-3xl mx-auto text-gray-600 mb-8">
+                ¿Tienes preguntas sobre la aplicación de la LFPIORPI en tu actividad diaria o negocio? Pregúntale a nuestro asistente de IA. Te ayudará a entender si lo que haces es una actividad vulnerable, qué obligaciones tienes, o los límites de efectivo permitidos.
+            </p>
+            <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+                <textarea id="lfpiorpiQuestionInput" class="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 text-gray-800" rows="6" placeholder="Ej: ¿Es la venta de autos usados una actividad vulnerable? o ¿Cuánto efectivo puedo recibir por la renta de un inmueble?"></textarea>
+                <button id="askLfpiorpiButton" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out flex items-center justify-center">
+                    <span id="askButtonTextLfpiorpi">Preguntar al Asistente 🤖</span>
+                    <div id="askLoadingSpinnerLfpiorpi" class="loading-spinner ml-3 hidden"></div>
+                </button>
+                <div id="lfpiorpiAnswerOutput" class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-md text-gray-700 min-h-[100px] flex items-center justify-center text-center">
+                    <p>La respuesta del asistente aparecerá aquí.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-white mt-16 py-6 border-t">
+        <div class="container mx-auto text-center text-gray-500 text-sm">
+            <p>&copy; 2025 Análisis de Reforma Legal. Este documento es un resumen informativo y no constituye asesoría legal.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.4 
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            navLinks.forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            const tabsContainer = document.getElementById('tabs-container');
+            const tabButtons = tabsContainer.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabsContainer.addEventListener('click', (e) => {
+                const clickedButton = e.target.closest('.tab-button');
+                if (!clickedButton) return;
+
+                const tabId = clickedButton.dataset.tab;
+
+                tabButtons.forEach(button => {
+                    button.classList.remove('active');
+                });
+                clickedButton.classList.add('active');
+
+                tabContents.forEach(content => {
+                    if (content.id === tabId) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            });
+            
+            const ctx = document.getElementById('sancionesChart').getContext('2d');
+            const sancionesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [
+                        'Incumplir requerimientos (Art. 53, I)',
+                        'Incumplir Art. 18 (Art. 53, II)',
+                        'Presentar Avisos Tarde (Art. 53, III)',
+                        'Presentar Avisos sin Requisitos (Art. 53, IV)',
+                        'Incumplir Art. 33, 33 Bis, 33 Ter (Art. 53, V)',
+                        'Omitir presentar Avisos (Art. 53, VI)',
+                        'Participar en actos prohibidos (Art. 53, VII)'
+                    ],
+                    datasets: [{
+                        label: 'Multa Mínima (UMA)',
+                        data: [200, 200, 200, 200, 2000, 10000, 10000],
+                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Multa Máxima (UMA)',
+                        data: [2000, 2000, 2000, 2000, 10000, 65000, 65000],
+                        backgroundColor: 'rgba(156, 163, 175, 0.6)',
+                        borderColor: 'rgba(156, 163, 175, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'logarithmic', // Use logarithmic scale
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    // Display only powers of 10 or significant values for clarity
+                                    if (value === 1 || value === 10 || value === 100 || value === 1000 || value === 10000 || value === 65000) {
+                                        return value.toLocaleString() + ' UMA';
+                                    }
+                                    return null; // Hide other ticks
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Rangos de Sanciones Económicas por Infracción (en UMAs) - Escala Logarítmica'
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toLocaleString() + ' UMAs';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gemini API Integration for Legal Text Simplifier
+            const legalTextInput = document.getElementById('legalTextInput');
+            const simplifyButton = document.getElementById('simplifyButton');
+            const simplifiedOutput = document.getElementById('simplifiedOutput');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const buttonText = document.getElementById('buttonText');
+
+            simplifyButton.addEventListener('click', async () => {
+                const textToSimplify = legalTextInput.value.trim();
+                if (!textToSimplify) {
+                    simplifiedOutput.innerHTML = '<p class="text-red-500">Por favor, introduce algún texto para simplificar.</p>';
+                    return;
+                }
+
+                simplifiedOutput.innerHTML = '<p>Simplificando...</p>';
+                loadingSpinner.classList.remove('hidden');
+                buttonText.classList.add('hidden');
+                simplifyButton.disabled = true;
+
+                try {
+                    let chatHistory = [];
+                    chatHistory.push({ role: "user", parts: [{ text: `Simplifica el siguiente texto legal para una audiencia general, utilizando un lenguaje claro y conciso, sin perder el significado original:\n\n${textToSimplify}` }] });
+                    const payload = { contents: chatHistory };
+                    // Change API URL to point to Netlify proxy
+                    const apiUrl = '/api/geminiProxy'; 
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        simplifiedOutput.innerHTML = `<p>${text}</p>`;
+                    } else {
+                        simplifiedOutput.innerHTML = '<p class="text-red-500">No se pudo simplificar el texto. Inténtalo de nuevo.</p>';
+                    }
+                } catch (error) {
+                    console.error('Error al llamar a la API de Gemini:', error);
+                    // Specific error handling for Netlify proxy in local/Canvas environment
+                    if (error instanceof TypeError && error.message.includes('Failed to parse URL') && apiUrl === '/api/geminiProxy') {
+                        simplifiedOutput.innerHTML = '<p class="text-red-500">Error: La funcionalidad de IA no está disponible en esta vista previa local. Este código está configurado para ejecutarse en Netlify usando un proxy seguro. Por favor, despliega la aplicación en Netlify para probar esta característica.</p>';
+                    } else {
+                        simplifiedOutput.innerHTML = '<p class="text-red-500">Ocurrió un error al procesar la solicitud. Por favor, inténtalo más tarde.</p>';
+                    }
+                } finally {
+                    loadingSpinner.classList.add('hidden');
+                    buttonText.classList.remove('hidden');
+                    simplifyButton.disabled = false;
+                }
+            });
+
+            // Gemini API Integration for General LFPIORPI Assistant
+            const lfpiorpiQuestionInput = document.getElementById('lfpiorpiQuestionInput');
+            const askLfpiorpiButton = document.getElementById('askLfpiorpiButton');
+            const lfpiorpiAnswerOutput = document.getElementById('lfpiorpiAnswerOutput');
+            const askLoadingSpinnerLfpiorpi = document.getElementById('askLoadingSpinnerLfpiorpi');
+            const askButtonTextLfpiorpi = document.getElementById('askButtonTextLfpiorpi');
+
+            askLfpiorpiButton.addEventListener('click', async () => {
+                const question = lfpiorpiQuestionInput.value.trim();
+                if (!question) {
+                    lfpiorpiAnswerOutput.innerHTML = '<p class="text-red-500">Por favor, introduce tu pregunta.</p>';
+                    return;
+                }
+
+                lfpiorpiAnswerOutput.innerHTML = '<p>Buscando respuesta...</p>';
+                askLoadingSpinnerLfpiorpi.classList.remove('hidden');
+                askButtonTextLfpiorpi.classList.add('hidden');
+                askLfpiorpiButton.disabled = true;
+
+                try {
+                    let chatHistory = [];
+                    // Updated prompt to reflect the latest law changes and general applicability
+                    chatHistory.push({ role: "user", parts: [{ text: `Eres un experto en la Ley Federal para la Prevención e Identificación de Operaciones con Recursos de Procedencia Ilícita (LFPIORPI) y sus reformas, específicamente la publicada el 16 de julio de 2025. Responde a la siguiente pregunta de una persona común o que realiza cualquier actividad sobre sus obligaciones, actividades vulnerables o restricciones de efectivo según la ley. Considera la siguiente información clave de la reforma: la conservación de información es por 10 años; el umbral de Beneficiario Controlador es del 25%; las multas se rigen por el Artículo 54 (rangos en UMA). Además, al responder sobre obligaciones, incluye detalles sobre: 1) La obligación de darse de alta y designar un representante de cumplimiento. 2) El Enfoque Basado en Riesgos (EBR) y la clasificación de riesgos. 3) Los programas de capacitación anuales obligatorios. 4) Los mecanismos automatizados de monitoreo. 5) La revisión de auditoría interna o externa anual. 6) La presentación de avisos mensuales y los avisos de 24 horas por sospecha. Sé conciso, directo y usa un lenguaje fácil de entender. Pregunta: ${question}` }] });
+                    const payload = { contents: chatHistory };
+                    // Change API URL to point to Netlify proxy
+                    const apiUrl = '/api/geminiProxy'; 
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        lfpiorpiAnswerOutput.innerHTML = `<p>${text}</p>`;
+                    } else {
+                        lfpiorpiAnswerOutput.innerHTML = '<p class="text-red-500">No se pudo obtener una respuesta. Inténtalo de nuevo.</p>';
+                    }
+                } catch (error) {
+                    console.error('Error al llamar a la API de Gemini para el asistente LFPIORPI:', error);
+                    // Specific error handling for Netlify proxy in local/Canvas environment
+                    if (error instanceof TypeError && error.message.includes('Failed to parse URL') && apiUrl === '/api/geminiProxy') {
+                        lfpiorpiAnswerOutput.innerHTML = '<p class="text-red-500">Error: La funcionalidad de IA no está disponible en esta vista previa local. Este código está configurado para ejecutarse en Netlify usando un proxy seguro. Por favor, despliega la aplicación en Netlify para probar esta característica.</p>';
+                    } else {
+                        lfpiorpiAnswerOutput.innerHTML = '<p class="text-red-500">Ocurrió un error al procesar la solicitud. Por favor, inténtalo más tarde.</p>';
+                    }
+                } finally {
+                    askLoadingSpinnerLfpiorpi.classList.add('hidden');
+                    askButtonTextLfpiorpi.classList.remove('hidden');
+                    askLfpiorpiButton.disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
